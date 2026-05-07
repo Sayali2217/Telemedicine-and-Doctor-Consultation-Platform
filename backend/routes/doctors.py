@@ -94,19 +94,29 @@ def create_doctor():
     except Exception as err:
         return jsonify({'error': 'Database error', 'message': str(err)}), 500
 
-@bp.route('/<id>/status', methods=['PATCH'])
+@bp.route('/<id>', methods=['PATCH'])
 @token_required
-def update_doctor_status(id):
+def update_doctor(id):
     try:
         data = request.get_json()
-        status = data.get('status')
+        updates = []
+        params = []
         
-        if not status:
-            return jsonify({'error': 'Status required'}), 400
+        fields = ['name', 'speciality', 'status']
+        
+        for field in fields:
+            if field in data and data[field] is not None:
+                updates.append(f'{field} = %s')
+                params.append(data[field])
+        
+        if not updates:
+            return jsonify({'error': 'Nothing to update'}), 400
+        
+        params.append(id)
         
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute('UPDATE doctors SET status = %s WHERE id = %s', (status, id))
+        cursor.execute(f"UPDATE doctors SET {', '.join(updates)} WHERE id = %s", params)
         conn.commit()
         
         cursor.execute('SELECT * FROM doctors WHERE id = %s', (id,))
@@ -121,3 +131,30 @@ def update_doctor_status(id):
     
     except Exception as err:
         return jsonify({'error': 'Database error', 'message': str(err)}), 500
+
+@bp.route("/<id>", methods=["DELETE"])
+@token_required
+def delete_doctor(id):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Check if doctor exists
+        cursor.execute("SELECT * FROM doctors WHERE id = %s", (id,))
+        doctor = cursor.fetchone()
+        
+        if not doctor:
+            cursor.close()
+            conn.close()
+            return jsonify({"error": "Doctor not found"}), 404
+        
+        # Delete doctor
+        cursor.execute("DELETE FROM doctors WHERE id = %s", (id,))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({"message": "Doctor deleted successfully", "doctor": doctor}), 200
+    
+    except Exception as err:
+        return jsonify({"error": "Database error", "message": str(err)}), 500

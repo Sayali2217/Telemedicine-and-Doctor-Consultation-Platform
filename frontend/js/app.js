@@ -410,6 +410,226 @@ async function submitNewInventory() {
   }
 }
 
+// ─── ADMIN FUNCTIONS ───
+async function suspendPatient(patientId) {
+  if (!confirm('Are you sure you want to suspend this patient? This will permanently delete their record from the database.')) {
+    return;
+  }
+
+  try {
+    const headers = {
+      'Authorization': 'Bearer ' + jwtToken
+    };
+
+    const res = await fetch(`http://localhost:5000/api/patients/${patientId}`, {
+      method: 'DELETE',
+      headers
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(`Failed to suspend patient: ${data.error || 'Unknown error'}`);
+      return;
+    }
+
+    alert('Patient suspended successfully');
+    await loadBackendData();
+    showView('ad-users', null);
+  } catch (e) {
+    console.error('Suspend patient failed', e);
+    alert('Could not suspend patient. Please try again.');
+  }
+}
+
+async function suspendDoctor(doctorId) {
+  if (!confirm('Are you sure you want to suspend this doctor? This will permanently delete their record from the database.')) {
+    return;
+  }
+
+  try {
+    const headers = {
+      'Authorization': 'Bearer ' + jwtToken
+    };
+
+    const res = await fetch(`http://localhost:5000/api/doctors/${doctorId}`, {
+      method: 'DELETE',
+      headers
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(`Failed to suspend doctor: ${data.error || 'Unknown error'}`);
+      return;
+    }
+
+    alert('Doctor suspended successfully');
+    await loadBackendData();
+    showView('ad-doctors', null);
+  } catch (e) {
+    console.error('Suspend doctor failed', e);
+    alert('Could not suspend doctor. Please try again.');
+  }
+}
+
+async function editPatient(patientId) {
+  const newName = prompt('Enter new name for the patient:');
+  if (!newName || newName.trim() === '') return;
+
+  const newAge = prompt('Enter new age (leave empty to skip):');
+  const newCity = prompt('Enter new city (leave empty to skip):');
+
+  const updates = { name: newName.trim() };
+  if (newAge && !isNaN(parseInt(newAge))) {
+    updates.age = parseInt(newAge);
+  }
+  if (newCity && newCity.trim()) {
+    updates.city = newCity.trim();
+  }
+
+  try {
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + jwtToken
+    };
+
+    const res = await fetch(`http://localhost:5000/api/patients/${patientId}`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify(updates)
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(`Failed to update patient: ${data.error || 'Unknown error'}`);
+      return;
+    }
+
+    alert('Patient updated successfully');
+    await loadBackendData();
+    showView('ad-users', null);
+  } catch (e) {
+    console.error('Update patient failed', e);
+    alert('Could not update patient. Please try again.');
+  }
+}
+
+async function editDoctor(doctorId) {
+  const newName = prompt('Enter new name for the doctor:');
+  if (!newName || newName.trim() === '') return;
+
+  const newSpeciality = prompt('Enter new speciality (leave empty to skip):');
+
+  const updates = { name: newName.trim() };
+  if (newSpeciality && newSpeciality.trim()) {
+    updates.speciality = newSpeciality.trim();
+  }
+
+  try {
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + jwtToken
+    };
+
+    const res = await fetch(`http://localhost:5000/api/doctors/${doctorId}`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify(updates)
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(`Failed to update doctor: ${data.error || 'Unknown error'}`);
+      return;
+    }
+
+    alert('Doctor updated successfully');
+    await loadBackendData();
+    showView('ad-doctors', null);
+  } catch (e) {
+    console.error('Update doctor failed', e);
+    alert('Could not update doctor. Please try again.');
+  }
+}
+
+// ─── PHARMACY FUNCTIONS ───
+async function editInventory(sku) {
+  const newName = prompt('Enter new medicine name:');
+  if (!newName || newName.trim() === '') return;
+
+  const newPrice = prompt('Enter new price (leave empty to skip):');
+  const newQty = prompt('Enter new quantity (leave empty to skip):');
+
+  const updates = { name: newName.trim() };
+  if (newPrice && !isNaN(parseFloat(newPrice))) {
+    updates.price = parseFloat(newPrice);
+  }
+  if (newQty && !isNaN(parseInt(newQty))) {
+    updates.qty = parseInt(newQty);
+  }
+
+  try {
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + jwtToken
+    };
+
+    const res = await fetch(`http://localhost:5000/api/inventory/${sku}`, {
+      method: 'PATCH',
+      headers,
+      body: JSON.stringify(updates)
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(`Failed to update inventory: ${data.error || 'Unknown error'}`);
+      return;
+    }
+
+    alert('Inventory item updated successfully');
+    await loadBackendData();
+    showView('ph-inventory', null);
+  } catch (e) {
+    console.error('Update inventory failed', e);
+    alert('Could not update inventory item. Please try again.');
+  }
+}
+
+async function deleteInventory(sku) {
+  if (!confirm('Are you sure you want to delete this inventory item? This will permanently remove it from the database.')) {
+    return;
+  }
+
+  try {
+    const headers = {
+      'Authorization': 'Bearer ' + jwtToken
+    };
+
+    const res = await fetch(`http://localhost:5000/api/inventory/${sku}`, {
+      method: 'DELETE',
+      headers
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert(`Failed to delete inventory item: ${data.error || 'Unknown error'}`);
+      return;
+    }
+
+    alert('Inventory item deleted successfully');
+    await loadBackendData();
+    showView('ph-inventory', null);
+  } catch (e) {
+    console.error('Delete inventory failed', e);
+    alert('Could not delete inventory item. Please try again.');
+  }
+}
+
 function selectSlot(el) {
   document.querySelectorAll('[data-slot]').forEach(slot => {
     slot.style.background = 'var(--bg2)';
@@ -659,8 +879,14 @@ async function renderMessagesInChat(consultationId, chatElementId = null) {
       return;
     }
     
-    // Get messages from memory store
-    const messages = window.MESSAGE_STORE[consultationId] || [];
+    // Load messages from backend
+    const messages = await loadConsultationMessages(consultationId);
+    
+    // Store in memory for future reference
+    if (!window.MESSAGE_STORE) {
+      window.MESSAGE_STORE = {};
+    }
+    window.MESSAGE_STORE[consultationId] = messages;
     
     if (messages.length === 0) {
       chatElement.innerHTML = '<div style="color:var(--t3);font-size:12px;padding:20px;text-align:center;">No messages yet. Start the conversation!</div>';
@@ -669,7 +895,7 @@ async function renderMessagesInChat(consultationId, chatElementId = null) {
         const time = new Date(msg.sentAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
         const isMine = msg.senderRole === currentRole;
         const senderLabel = msg.senderRole === 'doctor' ? '👨‍⚕️' : '🧑';
-        const displayName = isMine ? 'You' : msg.senderName;
+        const displayName = isMine ? 'You' : msg.senderName || (msg.senderRole === 'doctor' ? 'Doctor' : 'Patient');
         
         return `<div class="msg ${isMine ? 'me' : 'them'}">
           <div style="font-size:10px;color:var(--t2);margin-bottom:3px;">${senderLabel} ${displayName}</div>
@@ -912,7 +1138,47 @@ function printPrescription() {
   setTimeout(() => printWindow.print(), 250);
 }
 
-/* ─── TAB SWITCHING ─── */
+/* ─── DOCUMENT UPLOAD ─── */
+async function uploadDocument(type) {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.pdf,.jpg,.jpeg,.png,.doc,.docx';
+  input.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('type', type);
+      
+      const headers = {
+        'Authorization': 'Bearer ' + jwtToken
+      };
+      
+      const response = await fetch(`http://localhost:5000/api/patients/${currentPatientId}/documents`, {
+        method: 'POST',
+        headers,
+        body: formData
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok) {
+        alert(`✅ ${type.charAt(0).toUpperCase() + type.slice(1)} document uploaded successfully!`);
+        // Reload the health records view
+        showView('pt-records', null);
+      } else {
+        alert(`❌ Upload failed: ${result.error || 'Unknown error'}`);
+      }
+    } catch (err) {
+      console.error('Upload error:', err);
+      alert(`❌ Error uploading document: ${err.message}`);
+    }
+  };
+  
+  input.click();
+}
 function switchTab(el, tabKey) {
   // Deactivate sibling tabs
   el.closest('.tab-row').querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -1037,19 +1303,32 @@ async function sendTeleMsg() {
   if (!text) return;
   
   try {
-    // Create message object
-    const message = {
-      id: Date.now(),
-      consultationId: currentConsultationId,
-      senderId: currentUser.id || currentPatientId,
-      senderRole: 'patient',
-      senderName: currentUser.name || 'Patient',
-      messageText: text,
-      sentAt: new Date().toISOString(),
-      timestamp: Date.now()
+    // Send message to backend
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + jwtToken
     };
     
-    // Store in memory
+    const response = await fetch('http://localhost:5000/api/messages/send', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        consultationId: currentConsultationId,
+        senderId: currentUser.id || currentPatientId,
+        senderRole: 'patient',
+        messageText: text
+      })
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      alert('Failed to send message: ' + (error.error || 'Unknown error'));
+      return;
+    }
+    
+    const message = await response.json();
+    
+    // Store in memory for UI
     if (!window.MESSAGE_STORE[currentConsultationId]) {
       window.MESSAGE_STORE[currentConsultationId] = [];
     }
@@ -1057,7 +1336,7 @@ async function sendTeleMsg() {
     
     // Update UI
     const chat = document.getElementById('tele-chat');
-    const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    const time = new Date(message.sentAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
     const senderLabel = message.senderRole === 'doctor' ? '👨‍⚕️' : '🧑';
     const messageHTML = `<div class="msg me">
       <div style="font-size:10px;color:var(--t2);margin-bottom:3px;">${senderLabel} You</div>
@@ -1068,10 +1347,11 @@ async function sendTeleMsg() {
     chat.innerHTML += messageHTML;
     input.value = '';
     chat.scrollTop = chat.scrollHeight;
-    console.log('Message stored in memory:', message);
+    
+    console.log('Message sent and stored:', message);
   } catch (err) {
-    console.error('Error:', err);
-    alert('Error: ' + err.message);
+    console.error('Error sending message:', err);
+    alert('Error sending message: ' + err.message);
   }
 }
 
@@ -1081,19 +1361,32 @@ async function sendDrMsg() {
   if (!text) return;
   
   try {
-    // Create message object
-    const message = {
-      id: Date.now(),
-      consultationId: currentConsultationId,
-      senderId: currentUser.id || currentDoctorId,
-      senderRole: 'doctor',
-      senderName: currentUser.name || 'Doctor',
-      messageText: text,
-      sentAt: new Date().toISOString(),
-      timestamp: Date.now()
+    // Send message to backend
+    const headers = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer ' + jwtToken
     };
     
-    // Store in memory
+    const response = await fetch('http://localhost:5000/api/messages/send', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        consultationId: currentConsultationId,
+        senderId: currentUser.id || currentDoctorId,
+        senderRole: 'doctor',
+        messageText: text
+      })
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      alert('Failed to send message: ' + (error.error || 'Unknown error'));
+      return;
+    }
+    
+    const message = await response.json();
+    
+    // Store in memory for UI
     if (!window.MESSAGE_STORE[currentConsultationId]) {
       window.MESSAGE_STORE[currentConsultationId] = [];
     }
@@ -1101,7 +1394,7 @@ async function sendDrMsg() {
     
     // Update UI
     const chat = document.getElementById('dr-chat');
-    const time = new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    const time = new Date(message.sentAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
     const senderLabel = message.senderRole === 'doctor' ? '👨‍⚕️' : '🧑';
     const messageHTML = `<div class="msg me">
       <div style="font-size:10px;color:var(--t2);margin-bottom:3px;">${senderLabel} You</div>
@@ -1112,10 +1405,11 @@ async function sendDrMsg() {
     chat.innerHTML += messageHTML;
     input.value = '';
     chat.scrollTop = chat.scrollHeight;
-    console.log('Message stored in memory:', message);
+    
+    console.log('Message sent and stored:', message);
   } catch (err) {
-    console.error('Error:', err);
-    alert('Error: ' + err.message);
+    console.error('Error sending message:', err);
+    alert('Error sending message: ' + err.message);
   }
 }
 
@@ -1345,7 +1639,23 @@ async function checkoutCart() {
       throw new Error(result.message || result.error || 'Order creation failed');
     }
     
-    alert(`✅ Order placed successfully!\nOrder ID: ${result.id}\nTotal: ₹${totalAmount}`);
+    // Confirm the order by updating status to 'confirmed'
+    const confirmResponse = await fetch(`http://localhost:5000/api/orders/${result.id}/status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + jwtToken
+      },
+      body: JSON.stringify({
+        status: 'confirmed'
+      })
+    });
+    
+    if (confirmResponse.ok) {
+      alert(`✅ Order placed and confirmed successfully!\nOrder ID: ${result.id}\nTotal: ₹${totalAmount}`);
+    } else {
+      alert(`✅ Order placed successfully!\nOrder ID: ${result.id}\nTotal: ₹${totalAmount}\n⚠️ Order confirmation pending.`);
+    }
     
     // Clear the cart
     DATA.cart = [];
@@ -1356,7 +1666,7 @@ async function checkoutCart() {
     await loadBackendData();
     showView('pt-orders', null);
     
-    console.log('Order created:', result);
+    console.log('Order created and confirmed:', result);
   } catch (err) {
     console.error('Checkout error:', err);
     alert(`❌ Error placing order: ${err.message}`);

@@ -267,13 +267,35 @@ const PT = {
         </div>
       </div>
       <div class="card">
-        <div class="card-header"><div class="card-title">Lab Reports</div><div class="card-action">Upload</div></div>
+        <div class="card-header"><div class="card-title">Lab Reports</div><div class="card-action"><button class="btn-sm" onclick="uploadDocument('lab')">📎 Upload</button></div></div>
         <div class="card-body">
           ${[['CBC - Complete Blood Count','Mar 2026','Normal'],['Lipid Profile','Feb 2026','Borderline'],['Blood Sugar Fasting','Jan 2026','Normal'],['Vitamin D Level','Jan 2026','Low']].map(([n,d,r]) => `
             <div class="list-item">
               <div style="font-size:20px">🧪</div>
               <div class="item-info"><div class="item-main">${n}</div><div class="item-sub">${d}</div></div>
               <span class="badge ${r==='Normal'?'b-live':r==='Low'?'b-wait':'b-pend'}">${r}</span>
+            </div>`).join('')}
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Prescriptions</div><div class="card-action"><button class="btn-sm" onclick="uploadDocument('prescription')">📎 Upload</button></div></div>
+        <div class="card-body">
+          ${[['Blood Pressure Medication','Apr 2026','Dr. S. Mehta'],['Antihistamine','Feb 2026','Dr. R. Iyer'],['Vitamin D Supplement','Jan 2026','Dr. K. Verma']].map(([n,d,doc]) => `
+            <div class="list-item">
+              <div style="font-size:20px">💊</div>
+              <div class="item-info"><div class="item-main">${n}</div><div class="item-sub">${doc}</div></div>
+              <div class="item-time">${d}</div>
+            </div>`).join('')}
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Medical Certificates</div><div class="card-action"><button class="btn-sm" onclick="uploadDocument('certificate')">📎 Upload</button></div></div>
+        <div class="card-body">
+          ${[['Fitness Certificate','Mar 2026','Dr. K. Verma'],['Sick Leave','Feb 2026','Dr. P. Singh']].map(([n,d,doc]) => `
+            <div class="list-item">
+              <div style="font-size:20px">📄</div>
+              <div class="item-info"><div class="item-main">${n}</div><div class="item-sub">${doc}</div></div>
+              <div class="item-time">${d}</div>
             </div>`).join('')}
         </div>
       </div>
@@ -831,7 +853,7 @@ const AD = {
             <tr><td><div style="display:flex;align-items:center;gap:8px;"><div class="avatar ${p.av} sm">${p.init}</div><strong>${p.name}</strong></div></td>
             <td>${p.age}</td><td>${p.city}</td><td>${p.cond}</td><td style="color:var(--t2)">${p.last}</td>
             <td><span class="badge ${p.status}">${p.statusLabel}</span></td>
-            <td><button class="btn-sm" style="font-size:11px;padding:5px 10px;margin-right:4px;">Edit</button><button class="btn-sm" style="font-size:11px;padding:5px 10px;background:var(--red-l);color:var(--red);">Suspend</button></td></tr>`).join('')}
+            <td><button class="btn-sm" style="font-size:11px;padding:5px 10px;margin-right:4px;" onclick="editPatient('${p.id}')">Edit</button><button class="btn-sm" style="font-size:11px;padding:5px 10px;background:var(--red-l);color:var(--red);" onclick="suspendPatient('${p.id}')">Suspend</button></td></tr>`).join('')}
           </tbody>
         </table>
       </div>
@@ -871,7 +893,7 @@ const AD = {
             <tr><td><div style="display:flex;align-items:center;gap:8px;"><div class="avatar ${d.av} sm">${d.init}</div><strong>${d.name}</strong></div></td>
             <td>${d.spec}</td><td>${d.patients}</td><td>⭐ ${d.rating}</td>
             <td><span class="badge ${d.status}">${d.statusLabel}</span></td>
-            <td><button class="btn-sm" style="font-size:11px;padding:5px 10px;margin-right:4px;">Edit</button><button class="btn-sm" style="font-size:11px;padding:5px 10px;background:var(--red-l);color:var(--red);">Suspend</button></td></tr>`).join('')}
+            <td><button class="btn-sm" style="font-size:11px;padding:5px 10px;margin-right:4px;" onclick="editDoctor('${d.id}')">Edit</button><button class="btn-sm" style="font-size:11px;padding:5px 10px;background:var(--red-l);color:var(--red);" onclick="suspendDoctor('${d.id}')">Suspend</button></td></tr>`).join('')}
           </tbody>
         </table>
       </div>
@@ -903,10 +925,11 @@ const AD = {
       </div>
     </div>
     <div class="card"><div class="card-header"><div class="card-title">Stock Overview</div></div>
-    <div class="card-body" style="padding:0;"><table class="data-table"><thead><tr><th>Medicine</th><th>SKU</th><th>Qty</th><th>Min Stock</th><th>Price</th><th>Expiry</th><th>Status</th></tr></thead>
+    <div class="card-body" style="padding:0;"><table class="data-table"><thead><tr><th>Medicine</th><th>SKU</th><th>Qty</th><th>Min Stock</th><th>Price</th><th>Expiry</th><th>Status</th><th>Actions</th></tr></thead>
     <tbody>${DATA.inventory.map(i=>{const low=i.qty<i.min;return`<tr><td style="font-weight:500">💊 ${i.name}</td><td style="color:var(--t3)">${i.sku}</td>
     <td style="font-weight:${low?'700':'400'};color:${low?'var(--red)':'var(--t1)'};">${i.qty}</td><td>${i.min}</td><td>${i.price}</td><td>${i.expiry}</td>
-    <td><span class="badge ${low?'b-cancel':'b-live'}">${low?'Low Stock':'In Stock'}</span></td></tr>`;}).join('')}</tbody></table></div></div>`,
+    <td><span class="badge ${low?'b-cancel':'b-live'}">${low?'Low Stock':'In Stock'}</span></td>
+    <td><button class="btn-sm" style="font-size:11px;padding:5px 10px;margin-right:4px;" onclick="editInventory('${i.sku}')">Edit</button><button class="btn-sm" style="font-size:11px;padding:5px 10px;background:var(--red-l);color:var(--red);" onclick="deleteInventory('${i.sku}')">Delete</button></td></tr>`;}).join('')}</tbody></table></div></div>`,
 
   'ad-payments': () => `<div class="section-title">Payments</div>
     <div class="stats-grid" style="margin-bottom:14px;">

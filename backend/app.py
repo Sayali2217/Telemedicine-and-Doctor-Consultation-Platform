@@ -6,9 +6,18 @@ from flask import Flask, jsonify
 from flask_cors import CORS
 from datetime import datetime
 import sys
+import os
 
 app = Flask(__name__)
 CORS(app)
+
+# Configure upload folder
+UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+app.config['MAX_CONTENT_LENGTH'] = 16 * 1024 * 1024  # 16MB max file size
 
 # Import routes
 from routes import auth, patients, doctors, consultations, prescriptions, messages, orders, inventory, analytics, schedules

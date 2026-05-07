@@ -1,6 +1,20 @@
 from flask import Blueprint, request, jsonify
 from config import get_db_connection
 from middleware.auth import token_required
+import os
+from werkzeug.utils import secure_filename
+
+bp = Blueprint('patients', __name__, url_prefix='/api/patients')
+
+# Configure upload folder
+UPLOAD_FOLDER = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'uploads')
+if not os.path.exists(UPLOAD_FOLDER):
+    os.makedirs(UPLOAD_FOLDER)
+
+ALLOWED_EXTENSIONS = {'pdf', 'jpg', 'jpeg', 'png', 'doc', 'docx'}
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 bp = Blueprint('patients', __name__, url_prefix='/api/patients')
 
@@ -150,6 +164,75 @@ def update_patient(id):
             return jsonify({'error': 'Patient not found'}), 404
         
         return jsonify(patient), 200
+    
+    except Exception as err:
+        return jsonify({'error': 'Database error', 'message': str(err)}), 500
+
+@bp.route('/<id>/documents', methods=['POST'])
+@token_required
+def upload_document(id):
+    try:
+        if 'file' not in request.files:
+            return jsonify({'error': 'No file provided'}), 400
+        
+        file = request.files['file']
+        if file.filename == '':
+            return jsonify({'error': 'No file selected'}), 400
+        
+        if not allowed_file(file.filename):
+            return jsonify({'error': 'File type not allowed. Allowed: pdf, jpg, jpeg, png, doc, docx'}), 400
+        
+        filename = secure_filename(file.filename)
+        # Add patient ID prefix to avoid conflicts
+        unique_filename = f"{id}_{request.form.get('type', 'document')}_{filename}"
+        file_path = os.path.join(UPLOAD_FOLDER, unique_filename)
+        
+        file.save(file_path)
+        
+        # Store document info in database (you might want to create a documents table)
+        # For now, we'll just return success
+        document_info = {
+            'id': f"doc_{id}_{int(os.path.getmtime(file_path))}",
+            'patientId': id,
+            'filename': unique_filename,
+            'originalName': filename,
+            'type': request.form.get('type', 'document'),
+            'filePath': file_path,
+            'uploadedAt': os.path.getmtime(file_path)
+        }
+        
+        return jsonify({
+            'success': True,
+            'message': 'Document uploaded successfully',
+            'document': document_info
+        }), 201
+    
+    except Exception as err:
+        return jsonify({'error': 'Upload error', 'message': str(err)}), 500
+
+@bp.route('/<id>', methods=['DELETE'])
+@token_required
+def delete_patient(id):
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        
+        # Check if patient exists
+        cursor.execute('SELECT * FROM patients WHERE id = %s', (id,))
+        patient = cursor.fetchone()
+        
+        if not patient:
+            cursor.close()
+            conn.close()
+            return jsonify({'error': 'Patient not found'}), 404
+        
+        # Delete patient
+        cursor.execute('DELETE FROM patients WHERE id = %s', (id,))
+        conn.commit()
+        cursor.close()
+        conn.close()
+        
+        return jsonify({'message': 'Patient deleted successfully', 'patient': patient}), 200
     
     except Exception as err:
         return jsonify({'error': 'Database error', 'message': str(err)}), 500
